@@ -1,16 +1,70 @@
+import logging
+import pytest
+from lowball_rabbitmq_logging_handler import LowballRabbitMQLoggingHandler
 
-
+"""
+CRITICAL: 'CRITICAL',
+ERROR: 'ERROR',
+WARNING: 'WARNING',
+INFO: 'INFO',
+DEBUG: 'DEBUG',
+NOTSET: 'NOTSET',
+"""
 class TestLowballRabbitMQLoggingHandler:
 
-    def test_init_level(self):
-        pass
+    @pytest.mark.parametrize("level,error", [
+        (logging.DEBUG, False),
+        (logging.INFO, False),
+        (logging.WARNING, False),
+        (logging.ERROR, False),
+        (logging.NOTSET, False),
+        (logging.CRITICAL, False),
+        ("hello", True),
+        (1000, False),
+        (["list"], True)
 
-    def test_init_host(self):
+    ])
+    def test_init_level(self, level, error):
 
-        pass
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(level=level)
+        else:
+            handler = LowballRabbitMQLoggingHandler(level=level)
+            assert handler.level == level
 
-    def test_init_port(self):
-        pass
+    @pytest.mark.parametrize("host,error", [
+        ("hello", False),
+        ("hello.hello.com", False),
+        ("1.2.4.5", False),
+        (12000, True),
+        (["list"], True)
+    ])
+    def test_init_host(self, host, error):
+
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(host=host)
+        else:
+            handler = LowballRabbitMQLoggingHandler(host=host)
+            assert handler.host == host
+
+    @pytest.mark.parametrize("port,error", [
+        (-1, True),
+        (1.334, True),
+        ("1.2.4.5", True),
+        (12000, False),
+        (["list"], True),
+        (65536, True),
+        (8000, False)
+    ])
+    def test_init_port(self, port, error):
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(port=port)
+        else:
+            handler = LowballRabbitMQLoggingHandler(port=port)
+            assert handler.port == port
 
     def test_init_username_password(self):
         pass

@@ -54,6 +54,10 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @host.setter
     def host(self, value):
+        if not value:
+            value = ""
+        if not isinstance(value, str):
+            raise ValueError("host must be a string")
         self._host = value
 
     @property
@@ -62,6 +66,8 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @port.setter
     def port(self, value):
+        if not isinstance(value, int) or not 0 < value < 65536:
+            raise ValueError("Port must be a valid port in range 1-65535")
         self._port = value
 
     @property
@@ -188,6 +194,9 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
         self._channel = None
 
     def emit(self, record: LogRecord) -> None:
+
+        if record.levelno < self.level:
+            return
 
         self.acquire()
         try:
