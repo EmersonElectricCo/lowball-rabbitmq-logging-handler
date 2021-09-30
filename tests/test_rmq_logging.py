@@ -85,13 +85,34 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(username=value)
             assert handler.username == expected
 
-    def test_init_use_ssl(self):
+    @pytest.mark.parametrize("value,error,expected", [
+        (True, False, True),
+        (False, False, False),
+        ("True", False, True),
+        ("TRUE", False, True),
+        ("False", False, False),
+        ("true", False, True),
+        ("false", False, False),
+        ("FALSE", False, False),
+        ("somestring", True, None),
+        (0, False, False),
+        (1, False, True),
+        (None, False, False),
+        ("", True, None),
+        (["list"], True, None)
+    ])
+    def test_init_use_ssl_verify_ssl(self, value, error, expected):
 
-        pass
-
-    def test_init_verify_ssl(self):
-
-        pass
+        if error:
+            with pytest.raises(ValueError):
+                LowballRabbitMQLoggingHandler(use_ssl=value)
+            with pytest.raises(ValueError):
+                LowballRabbitMQLoggingHandler(verify_ssl=value)
+        else:
+            handler = LowballRabbitMQLoggingHandler(use_ssl=value)
+            assert handler.use_ssl == expected
+            handler = LowballRabbitMQLoggingHandler(verify_ssl=value)
+            assert handler.verify_ssl == expected
 
     def test_init_ca_file(self):
 

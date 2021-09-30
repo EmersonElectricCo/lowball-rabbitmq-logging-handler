@@ -96,10 +96,26 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @property
     def use_ssl(self):
-        return self.use_ssl
+        return self._use_ssl
 
     @use_ssl.setter
     def use_ssl(self, value):
+        if value is None:
+            value = False
+        if not isinstance(value, (str, int, bool)):
+            raise ValueError("use_ssl must be True or False, but can also be 0,1")
+
+        if isinstance(value, str):
+            if value in ("True", "true", "TRUE"):
+                value = True
+            elif value in ("False", "false", "FALSE"):
+                value = False
+            else:
+                raise ValueError("use_ssl should be True/False or a string True/False")
+
+        if isinstance(value, int):
+            value = bool(value)
+
         self._use_ssl = value
 
     @property
@@ -108,6 +124,21 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @verify_ssl.setter
     def verify_ssl(self, value):
+        if value is None:
+            value = False
+        if not isinstance(value, (str, int, bool)):
+            raise ValueError("verify_ssl must be True or False, but can also be 0,1")
+
+        if isinstance(value, str):
+            if value in ("True", "true", "TRUE"):
+                value = True
+            elif value in ("False", "false", "FALSE"):
+                value = False
+            else:
+                raise ValueError("verify_ssl should be True/False or a string True/False")
+
+        if isinstance(value, int):
+            value = bool(value)
         self._verify_ssl = value
 
     @property
