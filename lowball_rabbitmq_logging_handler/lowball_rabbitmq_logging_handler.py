@@ -76,6 +76,10 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @username.setter
     def username(self, value):
+        if value is None:
+            value = ""
+        if not isinstance(value, str):
+            raise ValueError("if set, username must be a string")
         self._username = value
 
     @property
@@ -84,6 +88,10 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @password.setter
     def password(self, value):
+        if value is None:
+            value = ""
+        if not isinstance(value, str):
+            raise ValueError("if set, password must be a string")
         self._password = value
 
     @property

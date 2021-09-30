@@ -66,8 +66,24 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(port=port)
             assert handler.port == port
 
-    def test_init_username_password(self):
-        pass
+    @pytest.mark.parametrize("value,error,expected", [
+        ("hello", False, "hello"),
+        ("", False, ""),
+        (None, False, ""),
+        (["list"], True, None),
+        (11234, True, None)
+    ])
+    def test_init_username_password(self, value, error, expected):
+        if error:
+            with pytest.raises(ValueError):
+                LowballRabbitMQLoggingHandler(username=value)
+            with pytest.raises(ValueError):
+                LowballRabbitMQLoggingHandler(password=value)
+        else:
+            handler = LowballRabbitMQLoggingHandler(password=value)
+            assert handler.password == expected
+            handler = LowballRabbitMQLoggingHandler(username=value)
+            assert handler.username == expected
 
     def test_init_use_ssl(self):
 
