@@ -14,7 +14,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     DEFAULT_ENVIRONMENT = "default"
     DEFAULT_SERVICE_NAME = "lowball"
-
+    DEFAULT_EXCANGE = "logs"
     def __init__(self,
                  level=logging.DEBUG,  # 10
                  host="127.0.0.1",
@@ -175,6 +175,11 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @exchange.setter
     def exchange(self, value):
+        if not value:
+            value = self.DEFAULT_EXCANGE
+
+        if not isinstance(value, str):
+            raise ValueError("exchange, if set, should be a string")
         self._exchange = value
 
     @property

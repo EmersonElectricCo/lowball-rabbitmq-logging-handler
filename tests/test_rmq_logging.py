@@ -167,9 +167,21 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(ca_file=cafile)
             assert handler.ca_file == None
 
-    def test_init_exchange(self):
+    @pytest.mark.parametrize("value,error,expected", [
+        ("", False, "logs"),
+        (None, False, "logs"),
+        ("hello", False, "hello"),
+        (101232, True, None),
+        (["list"], True, None)
+    ])
+    def test_init_exchange(self, value, error, expected):
 
-        pass
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(exchange=value)
+        else:
+            handler = LowballRabbitMQLoggingHandler(exchange=value)
+            assert handler.exchange == expected
 
     def test_init_environment(self):
 
