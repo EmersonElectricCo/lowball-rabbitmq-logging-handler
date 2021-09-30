@@ -114,13 +114,58 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(verify_ssl=value)
             assert handler.verify_ssl == expected
 
-    def test_init_ca_file(self):
+    @pytest.mark.parametrize("ca_file_path,error", [
+        ("ca_certificates", False),
+        (1234, True),
+        ("/LOL", True),
+        ("something", False),
+        ("", False),
+        (None, False)
+    ])
+    def test_init_ca_path(self, tmp_path, ca_file_path, error):
 
-        pass
+        if error:
+            with pytest.raises(ValueError):
+                LowballRabbitMQLoggingHandler(ca_path=ca_file_path)
+        else:
+            if ca_file_path:
+                path = tmp_path / ca_file_path
+                path.mkdir()
+                strpath = str(path)
+                handler = LowballRabbitMQLoggingHandler(ca_path=strpath)
+                assert handler.ca_path == strpath
+            else:
+                handler = LowballRabbitMQLoggingHandler(ca_path=ca_file_path)
+                assert handler.ca_path == None
 
-    def test_init_ca_path(self):
+    @pytest.mark.parametrize("cafile", [
+        "/tmp/this/does/not/exist.pem",
+        12344
 
-        pass
+    ])
+    def test_init_ca_file_file_does_not_exist_or_invalid(self, cafile):
+        with pytest.raises(ValueError):
+            LowballRabbitMQLoggingHandler(ca_file="/tmp/this/does/not/exist.pem")
+
+
+    @pytest.mark.parametrize("cafile", [
+        "file.ca",
+        "",
+        None
+    ])
+    def test_init_ca_file_file_does_exist_or_empty(self, tmp_path, cafile):
+
+        if cafile:
+            path = tmp_path / "cas"
+            path.mkdir()
+            f = path / cafile
+            f.write_text("hello")
+
+            handler = LowballRabbitMQLoggingHandler(ca_file=str(f.absolute()))
+            assert handler.ca_file == str(f.absolute())
+        else:
+            handler = LowballRabbitMQLoggingHandler(ca_file=cafile)
+            assert handler.ca_file == None
 
     def test_init_exchange(self):
 

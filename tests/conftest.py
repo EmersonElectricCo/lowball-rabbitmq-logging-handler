@@ -42,6 +42,3 @@ def mock_pika_closed_blocking_connection(monkeypatch):
     monkeypatch.setattr(pika.BlockingConnection, "__init__", Mock())
     monkeypatch.setattr(pika.BlockingConnection, "is_open", PropertyMock(return_value=False))
     monkeypatch.setattr(pika.BlockingConnection, "is_closed", PropertyMock(return_value=True))
-
-
-

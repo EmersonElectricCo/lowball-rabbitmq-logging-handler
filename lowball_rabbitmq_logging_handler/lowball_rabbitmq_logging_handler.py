@@ -3,6 +3,7 @@ import sys
 from logging import LogRecord
 import pika
 import ssl
+import os
 from pika import credentials
 from lowball.builtins.logging.formatter import DefaultFormatter
 
@@ -147,6 +148,10 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @ca_file.setter
     def ca_file(self, value):
+        if not value:
+            value = None
+        elif not isinstance(value, str) or not os.path.exists(value) or not os.path.isfile(value):
+            raise ValueError("ca_file if set must be a path to a valid file")
         self._ca_file = value
 
     @property
@@ -155,6 +160,13 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @ca_path.setter
     def ca_path(self, value):
+
+        if not value:
+            value = None
+
+        elif not isinstance(value, str) or not os.path.exists(value) or not os.path.isdir(value):
+            raise ValueError("ca_path if set must be a path to a valid directory")
+
         self._ca_path = value
 
     @property
