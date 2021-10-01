@@ -183,15 +183,39 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(exchange=value)
             assert handler.exchange == expected
 
-    def test_init_environment(self):
+    @pytest.mark.parametrize("value,error,expected", [
+        ("", False, "default"),
+        (None, False, "default"),
+        ("hello", False, "hello"),
+        (101232, True, None),
+        (["list"], True, None)
+    ])
+    def test_init_environment(self, value, error, expected):
 
-        pass
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(environment=value)
+        else:
+            handler = LowballRabbitMQLoggingHandler(environment=value)
+            assert handler.environment == expected
 
-    def test_init_service_name(self):
+    @pytest.mark.parametrize("value,error,expected", [
+        ("", False, "lowball"),
+        (None, False, "lowball"),
+        ("hello", False, "hello"),
+        (101232, True, None),
+        (["list"], True, None)
+    ])
+    def test_init_service_name(self, value, error, expected):
 
-        pass
+        if error:
+            with pytest.raises(Exception):
+                LowballRabbitMQLoggingHandler(service_name=value)
+        else:
+            handler = LowballRabbitMQLoggingHandler(service_name=value)
+            assert handler.service_name == expected
 
-    def test_init_formatter_configuration(self):
+    def test_init_formatter(self):
 
         pass
 

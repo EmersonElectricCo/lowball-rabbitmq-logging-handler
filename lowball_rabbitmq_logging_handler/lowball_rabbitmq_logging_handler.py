@@ -14,7 +14,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     DEFAULT_ENVIRONMENT = "default"
     DEFAULT_SERVICE_NAME = "lowball"
-    DEFAULT_EXCANGE = "logs"
+    DEFAULT_EXCHANGE = "logs"
     def __init__(self,
                  level=logging.DEBUG,  # 10
                  host="127.0.0.1",
@@ -31,7 +31,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
                  formatter_configuration=None
                  ):
         logging.Handler.__init__(self, level)
-        if formatter_configuration is None:
+        if formatter_configuration is None or not isinstance(formatter_configuration, dict):
             formatter_configuration = {}
         self.host = host
         self.port = port
@@ -44,8 +44,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
         self.exchange = exchange
         self.environment = environment
         self.service_name = service_name
-        self.formatter_configuration = formatter_configuration
-        self.formatter = self.FORMATTER_CLASS(**self.formatter_configuration)
+        self.formatter = self.FORMATTER_CLASS(**formatter_configuration)
         self._connection = None
         self._channel = None
 
@@ -176,7 +175,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
     @exchange.setter
     def exchange(self, value):
         if not value:
-            value = self.DEFAULT_EXCANGE
+            value = self.DEFAULT_EXCHANGE
 
         if not isinstance(value, str):
             raise ValueError("exchange, if set, should be a string")
@@ -188,6 +187,11 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @environment.setter
     def environment(self, value):
+        if not value:
+            value = self.DEFAULT_ENVIRONMENT
+
+        if not isinstance(value, str):
+            raise ValueError("exchange, if set, should be a string")
         self._environment = value
 
     @property
@@ -196,21 +200,12 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
     @service_name.setter
     def service_name(self, value):
+        if not value:
+            value = self.DEFAULT_SERVICE_NAME
+
+        if not isinstance(value, str):
+            raise ValueError("exchange, if set, should be a string")
         self._service_name = value
-
-    @property
-    def formatter_configuration(self):
-        return self._formatter_configuration
-
-    @formatter_configuration.setter
-    def formatter_configuration(self, value):
-        self._formatter_configuration = value
-
-    def get_routing_key(self, log_level):
-        environ = self.environment if self.environment else self.DEFAULT_ENVIRONMENT
-        sname = self.name if self.name else self.DEFAULT_SERVICE_NAME
-
-        return f"{environ}.{sname}.{log_level}"
 
     def get_connection_parameters(self):
         connection_parameters = {}
