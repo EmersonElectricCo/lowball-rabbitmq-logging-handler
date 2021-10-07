@@ -1,6 +1,11 @@
 import logging
+import ssl
+
+import pika
 import pytest
 from lowball_rabbitmq_logging_handler import LowballRabbitMQLoggingHandler
+import lowball_rabbitmq_logging_handler
+from unittest.mock import Mock, call
 
 """
 CRITICAL: 'CRITICAL',
@@ -215,15 +220,93 @@ class TestLowballRabbitMQLoggingHandler:
             handler = LowballRabbitMQLoggingHandler(service_name=value)
             assert handler.service_name == expected
 
-    def test_init_formatter(self):
+    @pytest.mark.parametrize("config,expected_call", [
+        ({"hello": "goodbyte", "k": 1}, call(hello="goodbyte", k=1)),
+        (None, call())
+
+    ])
+    def test_init_formatter(self, monkeypatch, config, expected_call):
+
+        monkeypatch.setattr(LowballRabbitMQLoggingHandler.FORMATTER_CLASS, "__init__", Mock(return_value=None))
+
+        handler = LowballRabbitMQLoggingHandler(formatter_configuration=config)
+        LowballRabbitMQLoggingHandler.FORMATTER_CLASS.__init__.assert_has_calls([expected_call])
+
+    @pytest.mark.parametrize("env,name,loglevel, expected_key", [
+        (None, None, "info", "default.lowball.info"),
+        ("", "", "critical", "default.lowball.critical"),
+        ("something", "bow", "debug", "something.bow.debug"),
+    ])
+    def test_get_routing_key(self, env, name, loglevel, expected_key):
+
+        handler = LowballRabbitMQLoggingHandler(environment=env, service_name=name)
+        assert handler.get_routing_key(loglevel) == expected_key
+
+
+    @pytest.mark.parametrize("username,password,usessl,cafile,capath,verify_ssl", [
+        ("", "", False, "", "", False),
+        ("user", "", False, "", "", False),
+        ("user", "password", True, "", "", True),
+        ("user", "password", True, "", "", False)
+    ])
+    def test_get_connection_parameters(self,
+                                       username,
+                                       password,
+                                       usessl,
+                                       cafile,
+                                       capath,
+                                       verify_ssl
+                                       ):
+
+        handler = LowballRabbitMQLoggingHandler(username=username, password=password,
+                                                use_ssl=usessl, ca_path=capath, ca_file=cafile, verify_ssl=verify_ssl)
+
+
+        connection_dict = {
+            "host": handler.host,
+            "port": handler.port
+        }
+
+        if username:
+            connection_dict["credentials"] = pika.PlainCredentials(handler.username, handler.password)
+
+        if usessl:
+            expected_context = ssl.create_default_context(cafile=cafile, capath=capath)
+            if not verify_ssl:
+                expected_context.check_hostname = False
+                expected_context.verify_mode = ssl.CERT_NONE
+
+            connection_dict["ssl_options"] = pika.SSLOptions(expected_context)
+
+        expected_connection_parameters = pika.ConnectionParameters(**connection_dict)
+        connection_parameters = handler.get_connection_parameters()
+
+        assert connection_parameters.host == expected_connection_parameters.host
+        assert connection_parameters.port == expected_connection_parameters.port
+        assert connection_parameters.credentials == expected_connection_parameters.credentials
+        if not usessl:
+            assert connection_parameters.ssl_options is None
+        else:
+            assert connection_parameters.ssl_options.context.verify_mode == expected_connection_parameters.ssl_options.context.verify_mode
+            assert connection_parameters.ssl_options.context.check_hostname == expected_connection_parameters.ssl_options.context.check_hostname
+
+    def test_get_connection_no_connection(self):
 
         pass
 
-    def test_get_connection_parameters(self):
+    def test_get_connection_no_channel(self):
 
         pass
 
-    def test_get_connection(self):
+    def test_get_connection_closed_connection(self):
+
+        pass
+
+    def test_get_connection_closed_channel(self):
+
+        pass
+
+    def test_get_connection_all_open(self):
 
         pass
 

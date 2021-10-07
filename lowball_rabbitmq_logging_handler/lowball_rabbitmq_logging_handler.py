@@ -1,5 +1,6 @@
 import logging
 import sys
+import time
 from logging import LogRecord
 import pika
 import ssl
@@ -207,8 +208,15 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
             raise ValueError("exchange, if set, should be a string")
         self._service_name = value
 
+    def get_routing_key(self, log_level):
+
+        return f"{self.environment}.{self.service_name}.{log_level}"
+
     def get_connection_parameters(self):
-        connection_parameters = {}
+        connection_parameters = {
+            "host": self.host,
+            "port": self.port
+        }
 
         if self.username:
             connection_parameters["credentials"] = pika.PlainCredentials(self.username, self.password)
@@ -259,7 +267,18 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
                 exchange=self.exchange
             )
         except Exception as err:
-            print("Unable to submit log: {err}", file=sys.stderr)
+            time.sleep(1)
+            try:
+                self.get_connection()
+                message = self.format(record)
+                self._channel.basic_publish(
+                    body=message,
+                    routing_key=self.get_routing_key(record.levelname),
+                    exchange=self.exchange
+                )
+            except Exception as err:
+
+                print(f"Unable to submit log: {err}", file=sys.stderr)
 
         finally:
             self.release()
