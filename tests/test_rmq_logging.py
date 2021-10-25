@@ -1,12 +1,11 @@
 import logging
 import ssl
-
 import pika
 import pytest
 from lowball_rabbitmq_logging_handler import LowballRabbitMQLoggingHandler
 import lowball_rabbitmq_logging_handler
-from unittest.mock import Mock, call
-
+from unittest.mock import Mock, call, patch
+from io import StringIO
 """
 CRITICAL: 'CRITICAL',
 ERROR: 'ERROR',
@@ -289,4 +288,46 @@ class TestLowballRabbitMQLoggingHandler:
         else:
             assert connection_parameters.ssl_options.context.verify_mode == expected_connection_parameters.ssl_options.context.verify_mode
             assert connection_parameters.ssl_options.context.check_hostname == expected_connection_parameters.ssl_options.context.check_hostname
+
+    def test_emit_no_channel_or_connection(self, mock_pika_open_blocking_connection, mock_pika_open_channel, test_log_record):
+
+        handler = LowballRabbitMQLoggingHandler()
+        with patch('sys.stderr', new=StringIO()) as test_stderr:
+
+            handler.emit(test_log_record)
+
+            assert handler._connection is not None
+            assert handler._channel is not None
+            handler._channel.basic_publish.assert_called_once()
+
+            msg = test_stderr.getvalue()
+            assert not msg
+
+    def test_emit_error_first_publish(self, test_log_record, mock_pika_open_channel_error_first_pub, mock_pika_open_blocking_connection):
+
+        handler = LowballRabbitMQLoggingHandler()
+        with patch('sys.stderr', new=StringIO()) as test_stderr:
+
+            handler.emit(test_log_record)
+
+            assert handler._connection is not None
+            assert handler._channel is not None
+
+            assert handler._channel.basic_publish.call_count == 2
+            msg = test_stderr.getvalue()
+            assert not msg
+
+    def test_emit_error_second_publish(self, test_log_record, mock_pika_open_channel_error_all_pub, mock_pika_open_blocking_connection):
+
+        handler = LowballRabbitMQLoggingHandler()
+        with patch('sys.stderr', new=StringIO()) as test_stderr:
+
+            handler.emit(test_log_record)
+
+            assert handler._connection is not None
+            assert handler._channel is not None
+            assert handler._channel.basic_publish.call_count == 2
+            msg = test_stderr.getvalue()
+            assert msg.startswith("Unable to submit log")
+
 
