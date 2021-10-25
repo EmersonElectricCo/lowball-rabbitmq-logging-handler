@@ -290,30 +290,3 @@ class TestLowballRabbitMQLoggingHandler:
             assert connection_parameters.ssl_options.context.verify_mode == expected_connection_parameters.ssl_options.context.verify_mode
             assert connection_parameters.ssl_options.context.check_hostname == expected_connection_parameters.ssl_options.context.check_hostname
 
-    def test_get_connection_no_connection(self):
-
-        pass
-
-    def test_get_connection_no_channel(self):
-
-        pass
-
-    def test_get_connection_closed_connection(self):
-
-        pass
-
-    def test_get_connection_closed_channel(self):
-
-        pass
-
-    def test_get_connection_all_open(self):
-
-        pass
-
-    def test_close_connection(self):
-
-        pass
-
-    def test_emit(self):
-
-        pass

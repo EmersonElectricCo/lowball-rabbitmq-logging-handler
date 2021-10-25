@@ -230,16 +230,13 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
         return pika.ConnectionParameters(**connection_parameters)
 
-    def get_connection(self):
+    def _get_connection(self):
+        self._close_connection()
+        self._connection = pika.BlockingConnection(self.get_connection_parameters())
+        self._channel = self._connection.channel()
+        self._channel.exchange_declare(exchange=self.exchange, exchange_type="topic")
 
-        if any([not self._connection or not self._connection.is_open, not self._channel or not self._channel.is_open]):
-
-            self.close_connection()
-            self._connection = pika.BlockingConnection(self.get_connection_parameters())
-            self._channel = self._connection.channel()
-            self._channel.exchange_declare(exchange=self.exchange, exchange_type="topic")
-
-    def close_connection(self):
+    def _close_connection(self):
 
         try:
             self._connection.close()
@@ -259,7 +256,10 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
 
         self.acquire()
         try:
-            self.get_connection()
+            # because we are using a blocking connection, we will only HB when we send a message
+            # this is the only way to check liveliness, we assume connection if we have established
+            if not self._connection or not self._channel:
+                self._get_connection()
             message = self.format(record)
             self._channel.basic_publish(
                 body=message,
@@ -267,9 +267,9 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
                 exchange=self.exchange
             )
         except Exception as err:
-            time.sleep(1)
             try:
-                self.get_connection()
+                # if the send fails, we attempt a fresh connection and send again.
+                self._get_connection()
                 message = self.format(record)
                 self._channel.basic_publish(
                     body=message,
@@ -277,7 +277,7 @@ class LowballRabbitMQLoggingHandler(logging.Handler):
                     exchange=self.exchange
                 )
             except Exception as err:
-
+                # twice errors are output to stderr
                 print(f"Unable to submit log: {err}", file=sys.stderr)
 
         finally:
