@@ -5,7 +5,7 @@ logging handler for lowball that leverages rabbitmq
 
 
 ## Overview
-This is a simple module for a lowball microservice ecosystem to connect logging to a rabbitmq service. 
+A lowball logging module that sends your microservice ecosystem logs to a rabbitmq service. 
 
 By default it uses the builtin lowball log formatter `lowball.builtins.logging.formatter.DefaultFormatter` but this 
 can be changed if desired. 
