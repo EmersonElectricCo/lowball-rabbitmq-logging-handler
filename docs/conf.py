@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'lowball-rabbitmq-logging-handler'
-copyright = '2021, Isaiah Eichen'
+copyright = '2021'
 author = 'Isaiah Eichen'
 
 # The short X.Y version
